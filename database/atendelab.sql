@@ -32,9 +32,13 @@ CREATE TABLE `atendimentos` (
   `pessoa_id` int(11) NOT NULL,
   `tipo_atendimento_id` int(11) NOT NULL,
   `usuario_id` int(11) NOT NULL,
-  `descricao` text DEFAULT NULL,
-  `data_atendimento` datetime DEFAULT current_timestamp(),
-  `status` enum('aberto','em_andamento','finalizado','cancelado') DEFAULT 'aberto'
+  `descricao` text NOT NULL,
+  `status` enum('aberto','em_andamento','concluido') NOT NULL DEFAULT 'aberto',
+  `data_atendimento` date NOT NULL,
+  `horario_atendimento` time NOT NULL,
+  `observacao_final` text DEFAULT NULL,
+  `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
+  `atualizado_em` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -45,10 +49,16 @@ CREATE TABLE `atendimentos` (
 
 CREATE TABLE `pessoas` (
   `id` int(11) NOT NULL,
-  `nome` varchar(100) NOT NULL,
-  `email` varchar(100) DEFAULT NULL,
+  `nome` varchar(150) NOT NULL,
+  `documento` varchar(30) NOT NULL,
   `telefone` varchar(20) DEFAULT NULL,
-  `criado_em` timestamp NOT NULL DEFAULT current_timestamp()
+  `email` varchar(150) NOT NULL,
+  `curso` varchar(120) DEFAULT NULL,
+  `periodo` varchar(20) DEFAULT NULL,
+  `observacoes` text DEFAULT NULL,
+  `status` enum('ativo','inativo') NOT NULL DEFAULT 'ativo',
+  `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
+  `atualizado_em` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -61,7 +71,9 @@ CREATE TABLE `tipos_atendimentos` (
   `id` int(11) NOT NULL,
   `nome` varchar(100) NOT NULL,
   `descricao` text DEFAULT NULL,
-  `criado_em` timestamp NOT NULL DEFAULT current_timestamp()
+  `status` enum('ativo','inativo') NOT NULL DEFAULT 'ativo',
+  `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
+  `atualizado_em` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -77,7 +89,8 @@ CREATE TABLE `usuarios` (
   `senha` varchar(255) NOT NULL,
   `perfil` enum('admin','atendente') DEFAULT 'atendente',
   `status` enum('ativo','inativo') DEFAULT 'ativo',
-  `criado_em` timestamp NOT NULL DEFAULT current_timestamp()
+  `criado_em` timestamp NOT NULL DEFAULT current_timestamp(),
+  `atualizado_em` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -86,6 +99,24 @@ CREATE TABLE `usuarios` (
 
 INSERT INTO `usuarios` (`id`, `nome`, `email`, `senha`, `perfil`, `status`, `criado_em`) VALUES
 (1, 'Administrador', 'admin@atendelab.com', '$2y$10$J9P2kU2BAMZ3TZcuxTsW4e1D/lka8EocYHzvyoOZmCNcWDQz3RuVC', 'admin', 'ativo', '2026-06-04 00:14:14');
+
+--
+-- Dados ficticios para homologacao local
+--
+
+INSERT INTO `tipos_atendimentos` (`id`, `nome`, `descricao`, `status`) VALUES
+(1, 'Duvida academica', 'Duvidas sobre disciplinas, conteudos e atividades.', 'ativo'),
+(2, 'Orientacao de atividade', 'Orientacoes sobre trabalhos, TCC, projetos e entregas.', 'ativo'),
+(3, 'Suporte tecnico', 'Problemas com sistemas, equipamentos, acessos e recursos.', 'ativo'),
+(4, 'Matricula e documentacao', 'Solicitacoes relacionadas a matricula, declaracoes e documentos.', 'ativo'),
+(5, 'Acesso ao laboratorio', 'Liberacao de uso e agendamento dos laboratorios.', 'ativo'),
+(6, 'Outros', 'Atendimentos diversos ainda nao classificados.', 'inativo'),
+(12, 'Revisao de avaliacao', 'Solicitacoes de revisao de provas, trabalhos e atividades avaliativas.', 'ativo'),
+(13, 'Apoio a extensao', 'Orientacoes relacionadas a projetos de extensao e atividades comunitarias.', 'ativo');
+
+INSERT INTO `pessoas` (`id`, `nome`, `documento`, `telefone`, `email`, `curso`, `periodo`, `status`, `observacoes`) VALUES
+(1, 'Carlos Henrique Souza', '321.654.987-10', '(47) 99999-0010', 'carlos.souza@exemplo.com', 'Engenharia de Software', '3o', 'ativo', 'Aluno interessado em orientacao sobre atividades complementares.'),
+(2, 'Mariana Oliveira Costa', '741.852.963-20', '(47) 99999-0011', 'mariana.oliveira@exemplo.com', 'Sistemas de Informacao', '5o', 'ativo', NULL);
 
 --
 -- Índices para tabelas despejadas
@@ -104,7 +135,8 @@ ALTER TABLE `atendimentos`
 -- Índices de tabela `pessoas`
 --
 ALTER TABLE `pessoas`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `documento` (`documento`);
 
 --
 -- Índices de tabela `tipos_atendimentos`
@@ -133,13 +165,13 @@ ALTER TABLE `atendimentos`
 -- AUTO_INCREMENT de tabela `pessoas`
 --
 ALTER TABLE `pessoas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `tipos_atendimentos`
 --
 ALTER TABLE `tipos_atendimentos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de tabela `usuarios`

@@ -10,157 +10,185 @@ class PessoasController
         $this->pdo = $pdo;
     }
 
+    private function json(array $dados, int $status = 200): void
+    {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($dados, JSON_UNESCAPED_UNICODE);
+    }
+
     public function listar(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
-        $sql = 'SELECT id, nome, email, telefone, criado_em
+        $sql = 'SELECT id, nome, documento, telefone, email,
+                       curso, periodo, status, observacoes
                 FROM pessoas
-                ORDER BY id DESC';
-
-        $stmt = $this->pdo->query($sql);
-        $pessoas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                ORDER BY nome';
 
         echo json_encode($pessoas, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $this->json($this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    public function buscar(): void
+    {
+        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+
+        if (!$id) {
+            $this->json(['erro' => 'ID invalido.'], 400);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT id, nome, documento, telefone, email,
+                    curso, periodo, status, observacoes
+             FROM pessoas
+             WHERE id = :id'
+        );
+        $stmt->execute(['id' => $id]);
+        $pessoa = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$pessoa) {
+            $this->json(['erro' => 'Pessoa nao encontrada.'], 404);
+            return;
+        }
+
+        $this->json($pessoa);
     }
 
     public function buscarPorId(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
-        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-
-        if (!$id) {
-            http_response_code(400);
-            echo json_encode(['erro' => 'ID inválido.']);
-            return;
-        }
-
-        $sql = 'SELECT id, nome, email, telefone, criado_em
-                FROM pessoas
-                WHERE id = :id';
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $pessoa = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$pessoa) {
-            http_response_code(404);
-            echo json_encode(['erro' => 'Pessoa não encontrada.']);
-            return;
-        }
-
-        echo json_encode($pessoa, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $this->buscar();
     }
 
     public function criar(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
         $nome = trim($_POST['nome'] ?? '');
-        $email = trim($_POST['email'] ?? '');
+        $documento = trim($_POST['documento'] ?? '');
         $telefone = trim($_POST['telefone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $curso = trim($_POST['curso'] ?? '');
+        $periodo = trim($_POST['periodo'] ?? '');
+        $status = $_POST['status'] ?? 'ativo';
+        $observacoes = trim($_POST['observacoes'] ?? '');
 
-        if ($nome === '') {
-            http_response_code(400);
-            echo json_encode(['erro' => 'O nome é obrigatório.']);
+        if ($nome === '' || $documento === '' || $email === '') {
+            $this->json(['erro' => 'Nome, documento e e-mail sao obrigatorios.'], 422);
             return;
         }
 
-        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            http_response_code(400);
-            echo json_encode(['erro' => 'E-mail inválido.']);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->json(['erro' => 'E-mail invalido.'], 422);
+            return;
+        }
+
+        if (!in_array($status, ['ativo', 'inativo'], true)) {
+            $this->json(['erro' => 'Status invalido.'], 422);
             return;
         }
 
         try {
-            $sql = 'INSERT INTO pessoas (nome, email, telefone)
-                    VALUES (:nome, :email, :telefone)';
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO pessoas
+                 (nome, documento, telefone, email, curso, periodo, status, observacoes)
+                 VALUES
+                 (:nome, :documento, :telefone, :email, :curso, :periodo, :status, :observacoes)'
+            );
+            $stmt->execute(compact(
+                'nome',
+                'documento',
+                'telefone',
+                'email',
+                'curso',
+                'periodo',
+                'status',
+                'observacoes'
+            ));
 
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindValue(':nome', $nome);
-            $stmt->bindValue(':email', $email !== '' ? $email : null);
-            $stmt->bindValue(':telefone', $telefone !== '' ? $telefone : null);
-            $stmt->execute();
-
-            http_response_code(201);
-            echo json_encode([
+            $this->json([
                 'mensagem' => 'Pessoa cadastrada com sucesso.',
-                'id' => $this->pdo->lastInsertId()
-            ], JSON_UNESCAPED_UNICODE);
+                'id' => (int) $this->pdo->lastInsertId()
+            ], 201);
         } catch (PDOException $e) {
-            http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao cadastrar pessoa.']);
+            $this->json(['erro' => 'Nao foi possivel cadastrar a pessoa.'], 400);
         }
     }
 
     public function atualizar(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
-        $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
+        $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
         $nome = trim($_POST['nome'] ?? '');
-        $email = trim($_POST['email'] ?? '');
+        $documento = trim($_POST['documento'] ?? '');
         $telefone = trim($_POST['telefone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $curso = trim($_POST['curso'] ?? '');
+        $periodo = trim($_POST['periodo'] ?? '');
+        $status = $_POST['status'] ?? 'ativo';
+        $observacoes = trim($_POST['observacoes'] ?? '');
 
-        if (!$id || $nome === '') {
-            http_response_code(400);
-            echo json_encode(['erro' => 'ID e nome são obrigatórios.']);
+        if (!$id || $nome === '' || $documento === '' || $email === '') {
+            $this->json(['erro' => 'Dados obrigatorios ausentes.'], 422);
             return;
         }
 
-        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            http_response_code(400);
-            echo json_encode(['erro' => 'E-mail inválido.']);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->json(['erro' => 'E-mail invalido.'], 422);
+            return;
+        }
+
+        if (!in_array($status, ['ativo', 'inativo'], true)) {
+            $this->json(['erro' => 'Status invalido.'], 422);
             return;
         }
 
         try {
-            $sql = 'UPDATE pessoas
-                    SET nome = :nome,
-                        email = :email,
-                        telefone = :telefone
-                    WHERE id = :id';
+            $stmt = $this->pdo->prepare(
+                'UPDATE pessoas
+                 SET nome = :nome,
+                     documento = :documento,
+                     telefone = :telefone,
+                     email = :email,
+                     curso = :curso,
+                     periodo = :periodo,
+                     status = :status,
+                     observacoes = :observacoes
+                 WHERE id = :id'
+            );
+            $stmt->execute(compact(
+                'id',
+                'nome',
+                'documento',
+                'telefone',
+                'email',
+                'curso',
+                'periodo',
+                'status',
+                'observacoes'
+            ));
 
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindValue(':nome', $nome);
-            $stmt->bindValue(':email', $email !== '' ? $email : null);
-            $stmt->bindValue(':telefone', $telefone !== '' ? $telefone : null);
-            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
-
-            echo json_encode(['mensagem' => 'Pessoa atualizada com sucesso.'], JSON_UNESCAPED_UNICODE);
+            $this->json(['mensagem' => 'Pessoa atualizada com sucesso.']);
         } catch (PDOException $e) {
-            http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao atualizar pessoa.']);
+            $this->json(['erro' => 'Nao foi possivel atualizar a pessoa.'], 400);
         }
+    }
+
+    public function inativar(): void
+    {
+        $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
+
+        if (!$id) {
+            $this->json(['erro' => 'ID invalido.'], 422);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare(
+            "UPDATE pessoas SET status = 'inativo' WHERE id = :id"
+        );
+        $stmt->execute(['id' => $id]);
+
+        $this->json(['mensagem' => 'Pessoa inativada com sucesso.']);
     }
 
     public function excluir(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-
-        $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
-
-        if (!$id) {
-            http_response_code(400);
-            echo json_encode(['erro' => 'ID inválido.']);
-            return;
-        }
-
-        try {
-            $sql = 'DELETE FROM pessoas WHERE id = :id';
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
-
-            echo json_encode(['mensagem' => 'Pessoa excluída com sucesso.'], JSON_UNESCAPED_UNICODE);
-        } catch (PDOException $e) {
-            // Pode falhar caso a pessoa possua atendimentos vinculados (Restrição de FK)
-            http_response_code(500);
-            echo json_encode(['erro' => 'Erro ao excluir pessoa. Verifique se existem atendimentos vinculados.']);
-        }
+        $this->inativar();
     }
 }
