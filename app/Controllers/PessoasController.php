@@ -24,7 +24,6 @@ class PessoasController
                 FROM pessoas
                 ORDER BY nome';
 
-        echo json_encode($pessoas, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         $this->json($this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC));
     }
 

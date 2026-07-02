@@ -6,6 +6,8 @@ require_once __DIR__ . '/app/Controllers/UsuariosController.php';
 require_once __DIR__ . '/app/Controllers/PessoasController.php';
 require_once __DIR__ . '/app/Controllers/TiposAtendimentosController.php';
 require_once __DIR__ . '/app/Controllers/AtendimentosController.php';
+require_once __DIR__ . '/app/Controllers/FrontendController.php';
+require_once __DIR__ . '/app/Controllers/DashboardController.php';
 
 $controller = $_GET['controller'] ?? 'auth';
 $action = $_GET['action'] ?? 'login';
@@ -36,6 +38,28 @@ if ($controller === 'auth') {
             echo 'Acao de autenticacao nao encontrada.';
     }
 
+    exit;
+}
+
+if ($controller === 'frontend') {
+    exigirAutenticacao();
+    $controller = new FrontendController();
+    if (!method_exists($controller, $action)) {
+        http_response_code(404);
+        exit('Acao nao encontrada.');
+    }
+    $controller->$action();
+    exit;
+}
+
+if ($controller === 'dashboard') {
+    exigirAutenticacao();
+    $controller = new DashboardController();
+    if (!method_exists($controller, $action)) {
+        http_response_code(404);
+        exit('Acao nao encontrada.');
+    }
+    $controller->$action();
     exit;
 }
 

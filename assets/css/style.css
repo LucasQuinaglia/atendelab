@@ -1,0 +1,35 @@
+:root {
+  --atendelab-green: #198754;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.login-card {
+  width: min(100%, 430px);
+}
+
+.brand-mark {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--atendelab-green);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.card {
+  border-radius: 14px;
+}
+
+.table th {
+  white-space: nowrap;
+}
+
+textarea {
+  resize: vertical;
+}

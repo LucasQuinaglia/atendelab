@@ -22,7 +22,7 @@ class AtendimentosController
         $sql = 'SELECT a.id,
                        p.nome AS pessoa_nome,
                        t.nome AS tipo_nome,
-                       u.nome AS responsavel_nome,
+                       u.nome AS usuario_nome,
                        a.descricao,
                        a.status,
                        a.data_atendimento,
@@ -50,7 +50,7 @@ class AtendimentosController
             'SELECT a.*,
                     p.nome AS pessoa_nome,
                     t.nome AS tipo_nome,
-                    u.nome AS responsavel_nome
+                    u.nome AS usuario_nome
              FROM atendimentos a
              INNER JOIN pessoas p ON p.id = a.pessoa_id
              INNER JOIN tipos_atendimentos t ON t.id = a.tipo_atendimento_id
