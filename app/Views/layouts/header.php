@@ -7,13 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AtendeLab</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="<?= $baseUrl ?>assets/css/style.css" rel="stylesheet">
+    <link href="<?= $assetUrl ?>css/style.css" rel="stylesheet">
 </head>
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #198754;">
         <div class="container-fluid">
-            <a class="navbar-brand" href="<?= $baseUrl ?>?controller=auth&action=dashboard">
+            <a class="navbar-brand" href="<?= $appUrl ?>?controller=auth&action=dashboard">
                 <div class="brand-mark me-2" style="display: inline-flex;">AL</div>
                 <span>AtendeLab</span>
             </a>
@@ -28,7 +28,7 @@
                         </span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= $baseUrl ?>?controller=auth&action=logout">Logout</a>
+                        <a class="nav-link" href="<?= $appUrl ?>?controller=auth&action=logout">Logout</a>
                     </li>
                 </ul>
             </div>

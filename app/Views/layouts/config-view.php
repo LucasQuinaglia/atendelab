@@ -1,2 +1,3 @@
 <?php
-$baseUrl = '/atendelab/';
+$appUrl = '/atendelab/public/';
+$assetUrl = '/atendelab/assets/';
